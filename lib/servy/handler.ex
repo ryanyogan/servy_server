@@ -3,7 +3,7 @@ defmodule Servy.Handler do
   Handles HTTP requests.
   """
   require Logger
-  alias Servy.{Parser, Plugins}
+  alias Servy.{FileHandler, Parser, Plugins}
 
   @pages_path Path.expand("../../pages", __DIR__)
   @doc """
@@ -39,23 +39,11 @@ defmodule Servy.Handler do
     @pages_path
     |> Path.join("about.html")
     |> File.read()
-    |> handle_file(conv)
+    |> FileHandler.handle_file(conv)
   end
 
   def route(%{path: path} = conv) do
     %{conv | resp_body: "No #{path} here!", status: 404}
-  end
-
-  defp handle_file({:ok, content}, conv) do
-    %{conv | status: 200, resp_body: content}
-  end
-
-  defp handle_file({:error, :enoent}, conv) do
-    %{conv | status: 404, resp_body: "File not found!"}
-  end
-
-  defp handle_file({:error, reason}, conv) do
-    %{conv | status: 500, resp_body: "File error: #{reason}"}
   end
 
   def format_response(conv) do
