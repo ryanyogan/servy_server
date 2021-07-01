@@ -3,7 +3,7 @@ defmodule Servy.Handler do
   Handles HTTP requests.
   """
   require Logger
-  alias Servy.{FileHandler, Parser, Plugins}
+  alias Servy.{Conv, FileHandler, Parser, Plugins}
 
   @pages_path Path.expand("../../pages", __DIR__)
   @doc """
@@ -19,54 +19,45 @@ defmodule Servy.Handler do
     |> format_response()
   end
 
-  def route(%{method: "GET", path: "/wildthings"} = conv) do
+  def route(%Conv{method: "GET", path: "/wildthings"} = conv) do
     %{conv | resp_body: "Bears, Lions, Tigers", status: 200}
   end
 
-  def route(%{method: "GET", path: "/bears"} = conv) do
+  def route(%Conv{method: "GET", path: "/bears"} = conv) do
     %{conv | resp_body: "Teddy, Smokey, Paddington", status: 200}
   end
 
-  def route(%{method: "GET", path: "/bears/" <> id} = conv) do
+  def route(%Conv{method: "GET", path: "/bears/" <> id} = conv) do
     %{conv | resp_body: "Bear #{id}", status: 200}
   end
 
-  def route(%{method: "DELETE", path: "/bears/" <> _id} = conv) do
+  def route(%Conv{method: "DELETE", path: "/bears/" <> _id} = conv) do
     %{conv | resp_body: "You cannot delete a bear!", status: 403}
   end
 
-  def route(%{method: "GET", path: "/about"} = conv) do
+  def route(%Conv{method: "GET", path: "/about"} = conv) do
     @pages_path
     |> Path.join("about.html")
     |> File.read()
     |> FileHandler.handle_file(conv)
   end
 
-  def route(%{path: path} = conv) do
+  def route(%Conv{path: path} = conv) do
     %{conv | resp_body: "No #{path} here!", status: 404}
   end
 
-  def format_response(conv) do
+  def format_response(%Conv{} = conv) do
     """
-    HTTP/1.1 #{conv.status} #{status_reason(conv.status)}
+    HTTP/1.1 #{Conv.full_status(conv)}"
     Content-Type: text/html
     Content-Length: #{byte_size(conv.resp_body)}
 
     #{conv.resp_body}
     """
   end
-
-  defp status_reason(code) do
-    %{
-      200 => "OK",
-      201 => "Created",
-      401 => "Unauthorized",
-      403 => "Forbidden",
-      404 => "Not Found",
-      500 => "Internal Server Error"
-    }[code]
-  end
 end
+
+# Below is temp code
 
 request = """
 GET /wildthings HTTP/1.1
