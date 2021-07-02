@@ -6,7 +6,7 @@ defmodule Servy.Parser do
     [request_line | header_lines] = String.split(top, "\n")
     [method, path, _] = String.split(request_line, " ")
 
-    headers = parse_headers(header_lines, %{})
+    headers = parse_headers(header_lines)
     params = parse_params(headers["Content-Type"], params_string)
 
     %Conv{method: method, path: path, params: params, headers: headers}
@@ -20,20 +20,10 @@ defmodule Servy.Parser do
 
   defp parse_params(_, _), do: %{}
 
-  def parse_headers([head | tail], headers) do
-    [key, value] = String.split(head, ": ")
-    headers = Map.put(headers, key, value)
-    parse_headers(tail, headers)
+  def parse_headers(header_lines) do
+    Enum.reduce(header_lines, %{}, fn line, header_accumulator ->
+      [key, value] = String.split(line, ": ")
+      Map.put(header_accumulator, key, value)
+    end)
   end
-
-  def parse_headers([], headers), do: headers
-end
-
-defmodule Recurse do
-  def sum([h | t], acc) do
-    acc = h + acc
-    sum(t, acc)
-  end
-
-  def sum([], acc), do: acc
 end

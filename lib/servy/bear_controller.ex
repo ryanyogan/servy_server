@@ -26,6 +26,10 @@ defmodule Servy.BearController do
     }
   end
 
+  def delete(conv, _params) do
+    %{conv | resp_body: "You cannot delete a bear!", status: 403}
+  end
+
   defp bear_item(bear) do
     "<li>#{bear.name} - #{bear.type}</li>"
   end
