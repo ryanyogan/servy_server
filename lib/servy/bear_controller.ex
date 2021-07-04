@@ -21,7 +21,7 @@ defmodule Servy.BearController do
     %{
       conv
       | status: 201,
-        resp_body: "Created a #{type} bear named #{name}"
+        resp_body: "Created a #{type} bear named #{name}!"
     }
   end
 
@@ -29,7 +29,7 @@ defmodule Servy.BearController do
     %{conv | resp_body: "You cannot delete a bear!", status: 403}
   end
 
-  defp render(conv, template_name, bindings \\ []) do
+  defp render(conv, template_name, bindings) do
     content =
       @templates_path
       |> Path.join(template_name)
