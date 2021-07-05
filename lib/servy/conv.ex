@@ -4,7 +4,7 @@ defmodule Servy.Conv do
             resp_body: "",
             params: %{},
             headers: %{},
-            resp_content_type: "text/html",
+            resp_headers: %{"Content-Type" => "text/html"},
             status: nil
 
   def full_status(conv) do
