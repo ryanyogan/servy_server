@@ -24,7 +24,7 @@ defmodule Servy.HttpServer do
 
     IO.puts("Connection accepted!\n")
 
-    serve(client_socket)
+    spawn(fn -> serve(client_socket) end)
 
     accept_loop(listen_socket)
   end
@@ -50,19 +50,6 @@ defmodule Servy.HttpServer do
     IO.puts(request)
 
     request
-  end
-
-  @doc """
-  Returns a generic HTTP response.
-  """
-  def generate_response(_request) do
-    """
-    HTTP/1.1 200 OK\r
-    Content-Type: text/plain\r
-    Content-Length: 6\r
-    \r
-    Hello!
-    """
   end
 
   @doc """
