@@ -3,7 +3,7 @@ defmodule Servy.Handler do
   Handles HTTP requests.
   """
   require Logger
-  alias Servy.{BearController, Conv, FileHandler, Parser, Plugins}
+  alias Servy.{BearController, Conv, FileHandler, Parser, Plugins, VideoCam}
 
   @pages_path Path.expand("../../pages", __DIR__)
   @doc """
@@ -68,6 +68,25 @@ defmodule Servy.Handler do
     |> File.read()
     |> FileHandler.handle_file(conv)
     |> markdown_to_html()
+  end
+
+  def route(%Conv{method: "GET", path: "/snapshots"} = conv) do
+    caller = self()
+
+    spawn(fn -> send(caller, {:result, VideoCam.get_snapshot("cam-1")}) end)
+
+    snapshot_1 =
+      receive do
+        {:result, filename} ->
+          filename
+      end
+
+    # snapshot_2 = spawn(fn -> VideoCam.get_snapshot("cam-2") end)
+    # snapshot_3 = spawn(fn -> VideoCam.get_snapshot("cam-3") end)
+
+    # snapshots = [snapshot_1, snapshot_2, snapshot_3]
+
+    %{conv | status: 200, resp_body: inspect(snapshot_1)}
   end
 
   def route(%Conv{path: path} = conv) do
