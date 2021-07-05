@@ -14,12 +14,18 @@ defmodule Servy.Plugins do
   def rewrite_path(%Conv{} = conv), do: conv
 
   def log(%Conv{} = conv) do
-    Logger.info(conv)
+    if Mix.env() == :dev do
+      Logger.info(conv)
+    end
+
     conv
   end
 
   def track(%Conv{status: 404, path: path} = conv) do
-    Logger.warn("Warning: #{path} is on the loose!")
+    if Mix.env() != :test do
+      Logger.warn("Warning: #{path} is on the loose!")
+    end
+
     conv
   end
 
