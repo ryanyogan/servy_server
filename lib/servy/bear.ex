@@ -1,4 +1,5 @@
 defmodule Servy.Bear do
+  @derive {Jason.Encoder, only: [:type, :name, :id, :hibernating]}
   defstruct id: nil, name: "", type: "", hibernating: false
 
   def is_grizzly?(bear) do

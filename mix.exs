@@ -18,6 +18,8 @@ defmodule Servy.MixProject do
   end
 
   defp deps do
-    []
+    [
+      {:jason, "~> 1.2"}
+    ]
   end
 end
