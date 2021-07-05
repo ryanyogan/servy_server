@@ -56,6 +56,14 @@ defmodule Servy.Handler do
     |> FileHandler.handle_file(conv)
   end
 
+  def route(%Conv{method: "GET", path: "/faq"} = conv) do
+    @pages_path
+    |> Path.join("faq.md")
+    |> File.read()
+    |> FileHandler.handle_file(conv)
+    |> markdown_to_html()
+  end
+
   def route(%Conv{path: path} = conv) do
     %{conv | resp_body: "No #{path} here!", status: 404}
   end
@@ -88,4 +96,10 @@ defmodule Servy.Handler do
     |> Enum.reverse()
     |> Enum.join("\n")
   end
+
+  defp markdown_to_html(%Conv{status: 200} = conv) do
+    %{conv | resp_body: Earmark.as_html!(conv.resp_body)}
+  end
+
+  defp markdown_to_html(%Conv{} = conv), do: conv
 end
