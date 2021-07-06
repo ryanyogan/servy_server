@@ -16,6 +16,6 @@ defmodule PledgeServerTest do
     most_recent_pledges = [{"larry", 10}, {"grace", 40}, {"daisy", 30}]
 
     assert PledgeServer.recent_pledges() == most_recent_pledges
-    assert PledgeServer.total_pledges() == 80
+    assert PledgeServer.total_pledged() == 80
   end
 end

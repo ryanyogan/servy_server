@@ -1,95 +1,96 @@
-defmodule Servy.GenericServer do
-  def start(callback_module, initial_state, name) do
-    pid = spawn(__MODULE__, :listen_loop, [initial_state, callback_module])
-    Process.register(pid, name)
-
-    pid
-  end
-
-  def call(pid, message) do
-    send(pid, {:call, self(), message})
-
-    receive do
-      {:response, response} ->
-        response
-    end
-  end
-
-  def cast(pid, message) do
-    send(pid, {:cast, message})
-  end
-
-  def listen_loop(state, callback_module) do
-    receive do
-      {:call, sender, message} when is_pid(sender) ->
-        {response, new_state} = callback_module.handle_call(message, state)
-
-        send(sender, {:response, response})
-        listen_loop(new_state, callback_module)
-
-      {:cast, message} ->
-        new_state = callback_module.handle_cast(message, state)
-        listen_loop(new_state, callback_module)
-
-      unexpected ->
-        IO.puts("Unexpected message: #{inspect(unexpected)}")
-        listen_loop(state, callback_module)
-    end
-  end
-end
-
 defmodule Servy.PledgeServer do
-  alias Servy.GenericServer
+  use GenServer
+
+  defmodule State do
+    defstruct cache_size: 3, pledges: []
+  end
+
   @name :pledge_server
 
+  # Client Interface
+
   def start do
-    GenericServer.start(__MODULE__, [], @name)
+    GenServer.start(__MODULE__, %State{}, name: @name)
   end
 
   def create_pledge(name, amount) do
-    GenericServer.call(@name, {:create_pledge, name, amount})
+    GenServer.call(@name, {:create_pledge, name, amount})
   end
 
   def recent_pledges do
-    GenericServer.call(@name, :recent_pledges)
+    GenServer.call(@name, :recent_pledges)
   end
 
-  def total_pledges do
-    GenericServer.call(@name, :total_pledged)
+  def total_pledged do
+    GenServer.call(@name, :total_pledged)
   end
 
   def clear do
-    GenericServer.cast(@name, :clear)
+    GenServer.cast(@name, :clear)
   end
 
-  def handle_cast(:clear, _state) do
-    []
+  def set_cache_size(cache_size) do
+    GenServer.cast(@name, {:set_cache_size, cache_size})
   end
 
-  def handle_call(:total_pledged, state) do
-    total = Enum.map(state, &elem(&1, 1)) |> Enum.sum()
-    {total, state}
+  # Server Interface
+
+  @impl GenServer
+  def init(state) do
+    pledges = fetch_recent_pledges_from_service()
+    {:ok, %{state | pledges: pledges}}
   end
 
-  def handle_call(:recent_pledges, state) do
-    {state, state}
+  @impl GenServer
+  def handle_cast(:clear, state) do
+    {:noreply, %{state | pledges: []}}
   end
 
-  def handle_call({:create_pledge, name, amount}, state) do
+  @impl GenServer
+  def handle_cast({:set_cache_size, size}, state) do
+    {:noreply, %{state | cache_size: size}}
+  end
+
+  @impl GenServer
+  def handle_call(:total_pledged, _from, state) do
+    total = Enum.map(state.pledges, &elem(&1, 1)) |> Enum.sum()
+    {:reply, total, state}
+  end
+
+  @impl GenServer
+  def handle_call(:recent_pledges, _from, state) do
+    {:reply, state.pledges, state}
+  end
+
+  @impl GenServer
+  def handle_call({:create_pledge, name, amount}, _from, state) do
     {:ok, id} = send_pledge_to_service(name, amount)
-    most_recent_pledges = Enum.take(state, 2)
-    new_state = [{name, amount} | most_recent_pledges]
+    most_recent_pledges = Enum.take(state.pledges, state.cache_size - 1)
 
-    {id, new_state}
+    cached_pledges = [{name, amount} | most_recent_pledges]
+    new_state = %{state | pledges: cached_pledges}
+
+    {:reply, id, new_state}
   end
 
-  def handle_call(_message, state) do
-    {state, state}
+  @impl GenServer
+  def handle_call(_message, _from, state) do
+    {:reply, state, state}
+  end
+
+  @impl GenServer
+  def handle_info(message, state) do
+    IO.puts("Bad #{inspect(message)}")
+    {:noreply, state}
   end
 
   defp send_pledge_to_service(_name, _amount) do
     # Simulate the external service
-
     {:ok, "pledge-#{:rand.uniform(1000)}"}
+  end
+
+  defp fetch_recent_pledges_from_service do
+    # Simulate a DB/Service lookup
+    [{"wilma", 15}, {"fred", 25}]
   end
 end
