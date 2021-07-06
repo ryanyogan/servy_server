@@ -12,7 +12,7 @@ defmodule Servy.VideoCam do
   def get_snapshot(camera_name) do
     case UserAPI.query("1") do
       {:ok, city} ->
-        "#{camera_name}-#{city}.jpg"
+        "#{camera_name}-#{city}-#{:rand.uniform(1_000)}.jpg"
 
       {:error, error} ->
         "Shit, #{error}"

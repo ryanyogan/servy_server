@@ -3,7 +3,7 @@ defmodule Servy.Handler do
   Handles HTTP requests.
   """
   require Logger
-  alias Servy.{BearController, Conv, FileHandler, Parser, Plugins, VideoCam}
+  alias Servy.{BearController, Conv, FileHandler, Parser, Plugins}
   import Servy.View, only: [render: 3]
 
   @pages_path Path.expand("../../pages", __DIR__)
@@ -84,16 +84,9 @@ defmodule Servy.Handler do
   end
 
   def route(%Conv{method: "GET", path: "/sensors"} = conv) do
-    task = Task.async(fn -> Servy.Tracker.get_location("bigfoot") end)
+    sensor_data = Servy.SensorServer.get_sensor_data()
 
-    snapshots =
-      ["cma-1", "cam-2", "cam-3"]
-      |> Enum.map(&Task.async(fn -> VideoCam.get_snapshot(&1) end))
-      |> Enum.map(&Task.await/1)
-
-    where_is_bigfoot = Task.await(task)
-
-    render(conv, "sensors.eex", snapshots: snapshots, location: where_is_bigfoot)
+    render(conv, "sensors.eex", sensor_data: sensor_data)
   end
 
   def route(%Conv{path: path} = conv) do
