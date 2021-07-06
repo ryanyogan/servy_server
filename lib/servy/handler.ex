@@ -4,6 +4,7 @@ defmodule Servy.Handler do
   """
   require Logger
   alias Servy.{BearController, Conv, FileHandler, Parser, Plugins, VideoCam}
+  import Servy.View, only: [render: 3]
 
   @pages_path Path.expand("../../pages", __DIR__)
   @doc """
@@ -70,23 +71,17 @@ defmodule Servy.Handler do
     |> markdown_to_html()
   end
 
-  def route(%Conv{method: "GET", path: "/snapshots"} = conv) do
-    caller = self()
+  def route(%Conv{method: "GET", path: "/sensors"} = conv) do
+    task = Task.async(fn -> Servy.Tracker.get_location("bigfoot") end)
 
-    spawn(fn -> send(caller, {:result, VideoCam.get_snapshot("cam-1")}) end)
+    snapshots =
+      ["cma-1", "cam-2", "cam-3"]
+      |> Enum.map(&Task.async(fn -> VideoCam.get_snapshot(&1) end))
+      |> Enum.map(&Task.await/1)
 
-    snapshot_1 =
-      receive do
-        {:result, filename} ->
-          filename
-      end
+    where_is_bigfoot = Task.await(task)
 
-    # snapshot_2 = spawn(fn -> VideoCam.get_snapshot("cam-2") end)
-    # snapshot_3 = spawn(fn -> VideoCam.get_snapshot("cam-3") end)
-
-    # snapshots = [snapshot_1, snapshot_2, snapshot_3]
-
-    %{conv | status: 200, resp_body: inspect(snapshot_1)}
+    render(conv, "sensors.eex", snapshots: snapshots, location: where_is_bigfoot)
   end
 
   def route(%Conv{path: path} = conv) do

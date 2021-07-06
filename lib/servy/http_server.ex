@@ -18,11 +18,7 @@ defmodule Servy.HttpServer do
   Accepts client connections on the `listen_socket`.
   """
   def accept_loop(listen_socket) do
-    IO.puts("Waiting to accept a client connection...\n")
-
     {:ok, client_socket} = :gen_tcp.accept(listen_socket)
-
-    IO.puts("Connection accepted!\n")
 
     spawn(fn -> serve(client_socket) end)
 
@@ -45,10 +41,6 @@ defmodule Servy.HttpServer do
   """
   def read_request(client_socket) do
     {:ok, request} = :gen_tcp.recv(client_socket, 0)
-
-    IO.puts("Received request:\n")
-    IO.puts(request)
-
     request
   end
 
@@ -57,9 +49,6 @@ defmodule Servy.HttpServer do
   """
   def write_response(response, client_socket) do
     :ok = :gen_tcp.send(client_socket, response)
-
-    IO.puts("Sent response:\n")
-    IO.puts(response)
 
     :gen_tcp.close(client_socket)
   end

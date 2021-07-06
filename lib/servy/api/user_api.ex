@@ -10,6 +10,8 @@ defmodule Servy.API.UserAPI do
   end
 
   defp handle_response({:ok, %{status_code: 200, body: body}}) do
+    :timer.sleep(1_000)
+
     city =
       Jason.decode!(body)
       |> get_in(["address", "city"])
