@@ -28,6 +28,10 @@ defmodule Servy.Handler do
     Servy.PledgeController.index(conv)
   end
 
+  def route(%Conv{method: "GET", path: "/pledges/new"} = conv) do
+    Servy.PledgeController.new(conv)
+  end
+
   def route(%Conv{method: "GET", path: "/hibernate/" <> time} = conv) do
     time |> String.to_integer() |> :timer.sleep()
 
